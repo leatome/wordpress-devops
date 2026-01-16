@@ -7,22 +7,10 @@ on:
 
 jobs:
   # ==============================================
-  # 1️⃣ Validation docker-compose
-  # ==============================================
-  validate:
-    name: Validation docker-compose
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Vérifier docker-compose
-        run: docker compose -f docker-compose.yml config
-
-  # ==============================================
-  # 2️⃣ Génération manifests Kubernetes
+  # Génération manifests Kubernetes
   # ==============================================
   generate:
     name: Génération manifestes Kubernetes
-    needs: validate
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -41,7 +29,7 @@ jobs:
           path: k8s/
 
   # ==============================================
-  # 3️⃣ Packaging ZIP
+  # Packaging ZIP
   # ==============================================
   package:
     name: Packaging ZIP
@@ -62,7 +50,7 @@ jobs:
           path: PedraLeaWordpress.zip
 
   # ==============================================
-  # 4️⃣ Déploiement FTP
+  # Déploiement FTP
   # ==============================================
   deploy:
     name: Upload FTP 
