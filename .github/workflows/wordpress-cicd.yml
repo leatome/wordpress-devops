@@ -1,0 +1,84 @@
+name: WordPress CI/CD Pipeline
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  # ==============================================
+  # 1️⃣ Validation docker-compose
+  # ==============================================
+  validate:
+    name: Validation docker-compose
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Vérifier docker-compose
+        run: docker compose config
+
+  # ==============================================
+  # 2️⃣ Génération manifests Kubernetes
+  # ==============================================
+  generate:
+    name: Génération manifestes Kubernetes
+    needs: validate
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Installer Kompose
+        run: curl -L https://github.com/kubernetes/kompose/releases/download/v1.32.0/kompose-windows-amd64.exe -o kompose.exe
+
+      - name: Convertir docker-compose to k8s
+        run: |
+          mkdir k8s
+          .\kompose.exe convert -o k8s\
+
+      - name: Sauvegarder manifestes
+        uses: actions/upload-artifact@v4
+        with:
+          name: k8s-manifests
+          path: k8s/
+
+  # ==============================================
+  # 3️⃣ Packaging ZIP
+  # ==============================================
+  package:
+    name: Packaging ZIP
+    needs: generate
+    runs-on: windows-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: k8s-manifests
+          path: k8s
+
+      - name: Création archive
+        run: powershell Compress-Archive -Path k8s\* -DestinationPath NomPrenomWordpress.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kube-zip
+          path: NomPrenomWordpress.zip
+
+  # ==============================================
+  # 4️⃣ Déploiement FTP
+  # ==============================================
+  deploy:
+    name: Upload FTP 
+    needs: package
+    runs-on: windows-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: kube-zip
+
+      - name: Upload sur FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./ 
+          server-dir: /RenduDevopsKube/
