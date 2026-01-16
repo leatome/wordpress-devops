@@ -54,12 +54,12 @@ jobs:
           path: k8s
 
       - name: Création archive
-        run: powershell Compress-Archive -Path k8s\* -DestinationPath NomPrenomWordpress.zip
+        run: powershell Compress-Archive -Path k8s\* -DestinationPath PedraLeaWordpress.zip
 
       - uses: actions/upload-artifact@v4
         with:
           name: kube-zip
-          path: NomPrenomWordpress.zip
+          path: PedraLeaWordpress.zip
 
   # ==============================================
   # 4️⃣ Déploiement FTP
