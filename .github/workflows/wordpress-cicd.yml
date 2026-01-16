@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Vérifier docker-compose
-        run: docker compose config
+        run: docker compose -f docker-compose.yml config
 
   # ==============================================
   # 2️⃣ Génération manifests Kubernetes
