@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    kompose.cmd: C:\kompose\kompose.exe convert
+    kompose.cmd: C:\kompose\kompose.exe convert -o k8s/
     kompose.version: 1.38.0 (a8f5d1cbd)
   labels:
     io.kompose.service: wordpress
@@ -15,15 +15,21 @@ spec:
   template:
     metadata:
       annotations:
-        kompose.cmd: C:\kompose\kompose.exe convert
+        kompose.cmd: C:\kompose\kompose.exe convert -o k8s/
         kompose.version: 1.38.0 (a8f5d1cbd)
       labels:
         io.kompose.service: wordpress
     spec:
       containers:
-        - envFrom:
-            - configMapRef:
-                name: env
+        - env:
+            - name: WORDPRESS_DB_HOST
+              value: db:3306
+            - name: WORDPRESS_DB_NAME
+              value: wordpress
+            - name: WORDPRESS_DB_PASSWORD
+              value: wppassword
+            - name: WORDPRESS_DB_USER
+              value: wpuser
           image: wordpress:6.5.3-php8.2-apache
           name: wordpress
           ports:

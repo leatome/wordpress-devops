@@ -4,8 +4,11 @@ services:
   db:
     image: mariadb:10.4
     restart: always
-    env_file:
-      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wpuser
+      MYSQL_PASSWORD: wppassword
     volumes:
       - db_data:/var/lib/mysql
 
@@ -14,8 +17,11 @@ services:
     restart: always
     ports:
       - "8080:80"
-    env_file:
-      - .env
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: wpuser
+      WORDPRESS_DB_PASSWORD: wppassword
+      WORDPRESS_DB_NAME: wordpress
     depends_on:
       - db
 

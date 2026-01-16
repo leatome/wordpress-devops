@@ -1,72 +1,82 @@
-name: Data CI/CD Pipeline
+name: WordPress CI/CD Pipeline
 
 on:
-  pull_request:
   push:
     branches: [ main ]
+  pull_request:
 
 jobs:
-  validate:
-    name: Validation docker-compose
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Vérifier docker-compose
-        run: docker compose config
-
+  # ======================================================
+  # Génération des manifests Kubernetes depuis Docker Compose
+  # ======================================================
   generate:
-    name: Génération manifestes Kubernetes
-    needs: validate
+    name: Génération manifests Kubernetes
     runs-on: windows-latest
     steps:
+      # Récupération du code
       - uses: actions/checkout@v4
+
+      # Installer Kompose
       - name: Installer Kompose
         run: curl -L https://github.com/kubernetes/kompose/releases/download/v1.32.0/kompose-windows-amd64.exe -o kompose.exe
 
-      - name: Convertir docker-compose to k8s
+      # Convertir docker-compose.yml en manifests Kubernetes
+      - name: Convertir docker-compose → k8s
         run: |
           mkdir k8s
-          .\kompose.exe convert -o k8s\
+          .\kompose.exe convert -f docker-compose.yml -o k8s\
 
+      # Sauvegarder les manifests pour les jobs suivants
       - name: Sauvegarder manifestes
         uses: actions/upload-artifact@v4
         with:
           name: k8s-manifests
           path: k8s/
 
+  # ======================================================
+  # Création du ZIP des manifests
+  # ======================================================
   package:
     name: Packaging ZIP
     needs: generate
     runs-on: windows-latest
     steps:
+      # Récupérer les manifests générés
       - uses: actions/download-artifact@v4
         with:
           name: k8s-manifests
           path: k8s
 
+      # Créer l’archive ZIP
       - name: Création archive
         run: powershell Compress-Archive -Path k8s\* -DestinationPath PedraLeaWordpress.zip
 
+      # Sauvegarder le zip comme artifact
       - uses: actions/upload-artifact@v4
         with:
           name: kube-zip
           path: PedraLeaWordpress.zip
 
+  # ======================================================
+  # Déploiement FTP
+  # ======================================================
   deploy:
-    name: Upload FTP 
+    name: Upload FTP
     needs: package
     runs-on: windows-latest
     if: github.ref == 'refs/heads/main'
     steps:
+      # Télécharger le zip
       - uses: actions/download-artifact@v4
         with:
           name: kube-zip
-          path: PedraLeaWordpress.zip
+
+      # Envoyer le zip sur le FTP
       - name: Upload sur FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./
-          server-dir: /k8s/
+          local-dir: ./ 
+          server-dir: /RenduDevopsKube/

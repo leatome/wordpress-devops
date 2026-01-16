@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    kompose.cmd: C:\kompose\kompose.exe convert
+    kompose.cmd: C:\kompose\kompose.exe convert -o k8s/
     kompose.version: 1.38.0 (a8f5d1cbd)
   labels:
     io.kompose.service: db
@@ -17,15 +17,21 @@ spec:
   template:
     metadata:
       annotations:
-        kompose.cmd: C:\kompose\kompose.exe convert
+        kompose.cmd: C:\kompose\kompose.exe convert -o k8s/
         kompose.version: 1.38.0 (a8f5d1cbd)
       labels:
         io.kompose.service: db
     spec:
       containers:
-        - envFrom:
-            - configMapRef:
-                name: env
+        - env:
+            - name: MYSQL_DATABASE
+              value: wordpress
+            - name: MYSQL_PASSWORD
+              value: wppassword
+            - name: MYSQL_ROOT_PASSWORD
+              value: rootpassword
+            - name: MYSQL_USER
+              value: wpuser
           image: mariadb:10.4
           name: db
           volumeMounts:
