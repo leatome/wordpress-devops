@@ -1,4 +1,4 @@
-name: WordPress CI/CD Pipeline
+name: Data CI/CD Pipeline
 
 on:
   pull_request:
@@ -6,11 +6,17 @@ on:
     branches: [ main ]
 
 jobs:
-  # ==============================================
-  # Génération manifests Kubernetes
-  # ==============================================
+  validate:
+    name: Validation docker-compose
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Vérifier docker-compose
+        run: docker compose config
+
   generate:
     name: Génération manifestes Kubernetes
+    needs: validate
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,9 +34,6 @@ jobs:
           name: k8s-manifests
           path: k8s/
 
-  # ==============================================
-  # Packaging ZIP
-  # ==============================================
   package:
     name: Packaging ZIP
     needs: generate
@@ -49,9 +52,6 @@ jobs:
           name: kube-zip
           path: PedraLeaWordpress.zip
 
-  # ==============================================
-  # Déploiement FTP
-  # ==============================================
   deploy:
     name: Upload FTP 
     needs: package
@@ -61,12 +61,12 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: kube-zip
-
+          path: PedraLeaWordpress.zip
       - name: Upload sur FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./ 
-          server-dir: /RenduDevopsKube/
+          local-dir: ./
+          server-dir: /k8s/
