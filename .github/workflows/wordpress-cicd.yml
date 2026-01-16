@@ -80,3 +80,5 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./ 
           server-dir: /RenduDevopsKube/
+          dangerous-clean-slate: false
+          state-name: "none"
